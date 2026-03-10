@@ -508,9 +508,9 @@ function createBot() {
 
       initializeModules(bot, mcData, defaultMove);
 
-      // Attempt creative mode (only works if bot has OP)
+      // Attempt creative mode (only works if bot has OP and enabled in settings)
       setTimeout(() => {
-        if (bot && botState.connected) {
+        if (bot && botState.connected && config.server['try-creative']) {
           bot.chat('/gamemode creative');
           console.log('[INFO] Attempted to set creative mode (requires OP)');
         }
@@ -529,19 +529,21 @@ function createBot() {
     // FIX: 'kicked' fires before 'end'. Remove the scheduleReconnect from 'kicked'
     // so that 'end' is the single source of reconnect truth, preventing double-trigger.
     bot.on('kicked', (reason) => {
-      console.log(`[Bot] Kicked: ${reason}`);
+      // FIX: stringify reason if it's an object to make it readable in logs
+      const kickReason = typeof reason === 'object' ? JSON.stringify(reason) : reason;
+      console.log(`[Bot] Kicked: ${kickReason}`);
       botState.connected = false;
-      botState.errors.push({ type: 'kicked', reason, time: Date.now() });
+      botState.errors.push({ type: 'kicked', reason: kickReason, time: Date.now() });
       clearAllIntervals();
 
-      const reasonStr = String(reason).toLowerCase();
+      const reasonStr = String(kickReason).toLowerCase();
       if (reasonStr.includes('throttl') || reasonStr.includes('wait before reconnect') || reasonStr.includes('too fast')) {
         console.log('[Bot] Throttle kick detected - will use extended reconnect delay');
         botState.wasThrottled = true;
       }
 
       if (config.discord && config.discord.events && config.discord.events.disconnect) {
-        sendDiscordWebhook(`[!] **Kicked**: ${reason}`, 0xff0000);
+        sendDiscordWebhook(`[!] **Kicked**: ${kickReason}`, 0xff0000);
       }
       // NOTE: do NOT call scheduleReconnect() here - 'end' will fire right after 'kicked' and handle it
     });
@@ -608,11 +610,16 @@ function initializeModules(bot, mcData, defaultMove) {
     const password = config.utils['auto-auth'].password;
     setTimeout(() => {
       if (bot && botState.connected) {
+        // Try both, but with a small delay between them to avoid spam kicks
         bot.chat(`/register ${password} ${password}`);
-        bot.chat(`/login ${password}`);
-        console.log('[Auth] Sent login commands');
+        setTimeout(() => {
+          if (bot && botState.connected) {
+            bot.chat(`/login ${password}`);
+            console.log('[Auth] Sent login commands');
+          }
+        }, 1500);
       }
-    }, 1000);
+    }, 2000);
   }
 
   // ---------- CHAT MESSAGES ----------

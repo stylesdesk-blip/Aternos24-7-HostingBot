@@ -8,7 +8,8 @@
   "server": {
     "ip": "sigmarizz111.aternos.me",
     "port": 45899,
-    "version": ""
+    "version": "1.21.1",
+    "try-creative": false
   },
   "position": {
     "enabled": true,
