@@ -1,14 +1,14 @@
 {
   "name": "AFK Bot",
   "bot-account": {
-    "username": "imgonnacream",
+    "username": "botbtw",
     "password": "",
     "type": "offline"
   },
   "server": {
     "ip": "bjjserverr.aternos.me",
     "port": 30279,
-    "version": "",
+    "version": "1.21.11",
     "try-creative": false
   },
   "position": {
